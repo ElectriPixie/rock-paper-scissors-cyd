@@ -16,8 +16,37 @@
 #define SCREEN_WIDTH 320
 #define SCREEN_HEIGHT 240
 #define NUM_BUTTONS 3
+#define WIFI_BUTTONS 2
+#define WIN_X 5
+#define WIN_Y 5
+#define LOSE_X 105
+#define LOSE_Y 5
+#define DRAW_X 210
+#define DRAW_Y 5
+#define ROCK 0
+#define PAPER 1
+#define DRAW 0
+#define WIN 1
+#define LOSE 2
+#define SCISSORS 2
+#define SB_SHOW_DRAWS 0
 
-void lv_button(struct Button * kp_button, lv_obj_t *button, int x, int y, int w, int h, const char * label_txt);
+typedef void (*event_cb_t)(lv_event_t *event);
+
+struct ScoreBoard{
+  int win;
+  int lose;
+  int draw;
+  int win_x;
+  int win_y;
+  int lose_x;
+  int lose_y;
+  int draw_x;
+  int draw_y;
+  lv_obj_t *sb_win; 
+  lv_obj_t *sb_lose;
+  lv_obj_t *sb_draw;
+};
 
 struct Button {
     int x, y;       
@@ -26,6 +55,7 @@ struct Button {
     int color;
     char *text;
     lv_obj_t *button;
+    event_cb_t callback;
 };
 
 struct KeyPad {
@@ -36,48 +66,146 @@ struct KeyPad {
   struct Button Buttons[NUM_BUTTONS];
 };
 
-struct KeyPad KeyPad;
+struct Wifi {
+    struct Button Buttons[WIFI_BUTTONS];
+};
 
-void drawButton(struct KeyPad* KeyPad, int i, int color)
+struct KeyPad KeyPad;
+struct Wifi Wifi;
+struct ScoreBoard ScoreBoard;
+
+void initGame(struct KeyPad *KeyPad, struct ScoreBoard *ScoreBoard);
+void initKeyPad(struct KeyPad* KeyPad, int x_offset, int y_offset, int w, int h, int color);
+void addButton(struct KeyPad* KeyPad, int i, int x, int y, int w, int h, int color, const char *text);
+void lv_button(struct Button * kp_button, lv_obj_t *button, int x, int y, int w, int h, const char * label_txt);
+void drawButton(struct Button *Button, int x, int y, int w, int h);
+void drawKeyPad(struct KeyPad* KeyPad);
+static void rps_button_click_cb(lv_event_t *event);
+void sendSymbol(int symbol);
+void initWifi(const char* ssid, const char* password, int channel, int ssid_hidden, int max_connections);
+static void wifi_button_click_cb(lv_event_t *event);
+void initScoreBoard(struct ScoreBoard* ScoreBoard);
+void drawScoreBoard(struct ScoreBoard* ScoreBoard);
+void updateScoreBoard(struct ScoreBoard* ScoreBoard, int result);
+void resetScoreBoard(struct ScoreBoard* ScoreBoard);
+int compareSymbol(int player_symbol, int opponent_symbol);
+void game(int player_symbol, int opponent_symbol);
+
+
+char* numStr(int number);
+
+char* numStr(int number) {
+    std::string strNumber = std::to_string(number);
+    char* ret = new char[strNumber.length() + 1];
+    strcpy(ret, strNumber.c_str());
+   return ret;
+}
+
+void initScoreBoard(struct ScoreBoard* ScoreBoard)
 {
-  int x, y;
-  int w, h;
-  x = KeyPad->Buttons[i].x;
-  y = KeyPad->Buttons[i].y;
-  w = KeyPad->Buttons[i].w;
-  h = KeyPad->Buttons[i].h;
-  if(color == 0)
+  ScoreBoard->win = 0;
+  ScoreBoard->lose = 0;
+  ScoreBoard->draw = 0;
+  ScoreBoard->win_x = WIN_X;
+  ScoreBoard->win_y = WIN_Y;
+  ScoreBoard->lose_x = LOSE_X;
+  ScoreBoard->lose_y = LOSE_Y;
+  ScoreBoard->draw_x = DRAW_X;
+  ScoreBoard->draw_y = DRAW_Y;
+  ScoreBoard->sb_win = lv_label_create(lv_scr_act());
+  ScoreBoard->sb_lose = lv_label_create(lv_scr_act());
+  if(SB_SHOW_DRAWS)
   {
-    color = KeyPad->Buttons[i].color;
+    ScoreBoard->sb_lose = lv_label_create(lv_scr_act());
   }
-  lv_button(&(KeyPad->Buttons[i]), KeyPad->Buttons[i].button, x, y, w, h, KeyPad->Buttons[i].text);
+}
+
+void drawScoreBoard(struct ScoreBoard* ScoreBoard)
+{
+  std::string win_text = "wins: ";
+  char *win = numStr(ScoreBoard->win);
+  win_text += win;
+  std::string lose_text = "losses: ";
+  char *lose = numStr(ScoreBoard->lose);
+  lose_text += lose;
+  lv_label_set_text(ScoreBoard->sb_win, (const char *)win_text.c_str());
+  lv_label_set_text(ScoreBoard->sb_lose, (const char *)lose_text.c_str());
+  lv_obj_set_x(ScoreBoard->sb_win, ScoreBoard->win_x);
+  lv_obj_set_y(ScoreBoard->sb_win, ScoreBoard->win_y);
+  lv_obj_set_x(ScoreBoard->sb_lose, ScoreBoard->lose_x);
+  lv_obj_set_y(ScoreBoard->sb_lose, ScoreBoard->lose_y);
+  if(SB_SHOW_DRAWS)
+  {
+    std::string draw_text = "draws: ";
+    char *draw = numStr(ScoreBoard->draw);
+    draw_text += draw;
+    lv_label_set_text(ScoreBoard->sb_draw, (const char *)draw_text.c_str());
+    lv_obj_set_x(ScoreBoard->sb_draw, ScoreBoard->draw_x);
+    lv_obj_set_y(ScoreBoard->sb_draw, ScoreBoard->draw_y);
+  }
+}
+
+void updateScoreBoard(struct ScoreBoard* ScoreBoard, int result)
+{
+  if(result == WIN)
+  {
+    ScoreBoard->win++;
+  }
+  if(result == LOSE)
+  {
+    ScoreBoard->lose++;
+  }
+  if(result == DRAW)
+  {
+    ScoreBoard->draw++;
+  }
+  drawScoreBoard(ScoreBoard);
+}
+
+void resetScoreBoard(struct ScoreBoard* ScoreBoard)
+{
+  ScoreBoard->win = 0;
+  ScoreBoard->lose = 0;
+  ScoreBoard->draw = 0;
+  drawScoreBoard(ScoreBoard);
+}
+
+void drawButton(struct Button *Button, int x, int y, int w, int h)
+{
+  lv_button(Button, Button->button, x, y, w, h, Button->text);
 }
 
 void drawKeyPad(struct KeyPad* KeyPad)
 {
   for(int i = 0; i < NUM_BUTTONS; i++)
   {
-    drawButton(KeyPad, i, 0);
+    drawButton(&(KeyPad->Buttons[i]), KeyPad->Buttons[i].x, KeyPad->Buttons[i].y, KeyPad->Buttons[i].w, KeyPad->Buttons[i].h);
   }
 }
 
-static void button_click_cb(lv_event_t *event)
+static void rps_button_click_cb(lv_event_t *event)
 {
-  Button *button;
-  button = (struct Button *)lv_event_get_user_data(event);
-  int number = button->number;
-  //handle any action on button press here
+  struct Button *Button;
+  Button = (struct Button *)lv_event_get_user_data(event);
+  sendSymbol(Button->number);
 }
 
-void addButton(struct KeyPad* KeyPad, int i, int x, int y, int w, int h, int color, const char *text)
+static void wifi_button_click_cb(lv_event_t *event)
 {
-  KeyPad->Buttons[i].x = x;
-  KeyPad->Buttons[i].y = y;
-  KeyPad->Buttons[i].w = w;
-  KeyPad->Buttons[i].h = h;
-  KeyPad->Buttons[i].number = i+1;
-  KeyPad->Buttons[i].color = color;
-  KeyPad->Buttons[i].text = (char *)text;
+  struct Button *Button;
+  Button = (struct Button *)lv_event_get_user_data(event);
+}
+
+void addButton(struct Button *Button, int i, int x, int y, int w, int h, int color, const char *text, event_cb_t callback)
+{
+  Button->x = x;
+  Button->y = y;
+  Button->w = w;
+  Button->h = h;
+  Button->number = i;
+  Button->color = color;
+  Button->text = (char *)text;
+  Button->callback = callback;
 }
 
 void initKeyPad(struct KeyPad* KeyPad, int x_offset, int y_offset, int w, int h, int color)
@@ -92,12 +220,11 @@ void initKeyPad(struct KeyPad* KeyPad, int x_offset, int y_offset, int w, int h,
   KeyPad->h = h;
   KeyPad->x_offset = x_offset;
   KeyPad->y_offset = y_offset;
-  int i = 0;
-  addButton(KeyPad, i++, x, y, xw, yh, color, "rock");
+  addButton(&(KeyPad->Buttons[ROCK]), ROCK, x, y, xw, yh, color, "rock", rps_button_click_cb);
   x = x+xw+KeyPad->x_offset;
-  addButton(KeyPad, i++, x, y, xw, yh, color, "paper");
+  addButton(&(KeyPad->Buttons[PAPER]), PAPER, x, y, xw, yh, color, "paper", rps_button_click_cb);
   x = x+xw+KeyPad->x_offset;
-  addButton(KeyPad, i, x, y, xw, yh, color, "scissors");
+  addButton(&(KeyPad->Buttons[SCISSORS]), SCISSORS, x, y, xw, yh, color, "scissors", rps_button_click_cb);
 }
 
 void lv_button(Button *kp_button, lv_obj_t *button, int x, int y, int w, int h, const char * label_txt)
@@ -146,7 +273,7 @@ void lv_button(Button *kp_button, lv_obj_t *button, int x, int y, int w, int h, 
     lv_obj_set_y(button, y);
     lv_obj_set_width(button, w);
     lv_obj_set_height(button, h);
-    lv_obj_add_event_cb(button, button_click_cb, LV_EVENT_CLICKED, kp_button);
+    lv_obj_add_event_cb(button, kp_button->callback, LV_EVENT_CLICKED, kp_button);
 }
 
 void initWifi(const char* ssid, const char* password, int channel, int ssid_hidden, int max_connections)
@@ -158,18 +285,85 @@ void initWifi(const char* ssid, const char* password, int channel, int ssid_hidd
   }
 }
 
+void sendSymbol(int symbol)
+{
+  ScoreBoard.win = symbol;
+  drawScoreBoard(&ScoreBoard);
+}
+
+void game(int player_symbol, int opponent_symbol)
+{
+  int result = compareSymbol(player_symbol, opponent_symbol);
+  updateScoreBoard(&ScoreBoard, result);
+}
+int compareSymbol(int player_symbol, int opponent_symbol)
+{
+  if(player_symbol == ROCK)
+  {
+    if(opponent_symbol == ROCK)
+    {
+      return DRAW;
+    }
+    if(opponent_symbol == PAPER)
+    {
+      return LOSE;
+    }
+    if(opponent_symbol == SCISSORS)
+    {
+      return WIN;
+    }
+  }
+  if(player_symbol == PAPER)
+  {
+    if(opponent_symbol == ROCK)
+    {
+      return WIN;
+    }
+    if(opponent_symbol == PAPER)
+    {
+      return DRAW;
+    }
+    if(opponent_symbol == SCISSORS)
+    {
+      return LOSE;
+    }
+  }
+  if(player_symbol == SCISSORS)
+  {
+    if(opponent_symbol == ROCK)
+    {
+      return LOSE;
+    }
+    if(opponent_symbol == PAPER)
+    {
+      return WIN;
+    }
+    if(opponent_symbol == SCISSORS)
+    {
+      return DRAW;
+    }
+  }
+  return -1;
+}
+
+void initGame(struct KeyPad *KeyPad, struct ScoreBoard *ScoreBoard)
+{
+    drawKeyPad(KeyPad);
+    drawScoreBoard(ScoreBoard);
+}
 
 void setup()
 {
   smartdisplay_init();
   auto display = lv_display_get_default();
   lv_display_set_rotation(display, LV_DISPLAY_ROTATION_270);
+  initScoreBoard(&ScoreBoard);
   initKeyPad(&KeyPad, 5, 40, SCREEN_WIDTH, SCREEN_HEIGHT, TFT_GREEN);
-  drawKeyPad(&KeyPad);
   if(USE_WIFI)
   {
     initWifi(ssid, password, 11, 0, 4);
   }
+  initGame(&KeyPad, &ScoreBoard);
 }
 
 auto lv_last_tick = millis();
