@@ -15,15 +15,8 @@
 
 #define SCREEN_WIDTH 320
 #define SCREEN_HEIGHT 240
+#define NUM_BUTTONS 3
 
-char* numStr(int number) {
-    std::string strNumber = std::to_string(number);
-    char* ret = new char[strNumber.length() + 1];
-    strcpy(ret, strNumber.c_str());
-   return ret;
-}
-
-//static lv_obj_t *label;
 void lv_button(struct Button * kp_button, lv_obj_t *button, int x, int y, int w, int h, const char * label_txt);
 
 struct Button {
@@ -31,14 +24,16 @@ struct Button {
     int w, h; 
     int number;
     int color;
+    char *text;
     lv_obj_t *button;
 };
 
 struct KeyPad {
   int x, y;
   int w, h;
-  int offset;
-  struct Button Buttons[9];
+  int x_offset;
+  int y_offset;
+  struct Button Buttons[NUM_BUTTONS];
 };
 
 struct KeyPad KeyPad;
@@ -51,17 +46,16 @@ void drawButton(struct KeyPad* KeyPad, int i, int color)
   y = KeyPad->Buttons[i].y;
   w = KeyPad->Buttons[i].w;
   h = KeyPad->Buttons[i].h;
-  const char * number = numStr(KeyPad->Buttons[i].number);
   if(color == 0)
   {
     color = KeyPad->Buttons[i].color;
   }
-  lv_button(&(KeyPad->Buttons[i]), KeyPad->Buttons[i].button, x, y, w, h, number);
+  lv_button(&(KeyPad->Buttons[i]), KeyPad->Buttons[i].button, x, y, w, h, KeyPad->Buttons[i].text);
 }
 
 void drawKeyPad(struct KeyPad* KeyPad)
 {
-  for(int i = 0; i < 9; i++)
+  for(int i = 0; i < NUM_BUTTONS; i++)
   {
     drawButton(KeyPad, i, 0);
   }
@@ -75,7 +69,7 @@ static void button_click_cb(lv_event_t *event)
   //handle any action on button press here
 }
 
-void addButton(struct KeyPad* KeyPad, int i, int x, int y, int w, int h, int color)
+void addButton(struct KeyPad* KeyPad, int i, int x, int y, int w, int h, int color, const char *text)
 {
   KeyPad->Buttons[i].x = x;
   KeyPad->Buttons[i].y = y;
@@ -83,39 +77,27 @@ void addButton(struct KeyPad* KeyPad, int i, int x, int y, int w, int h, int col
   KeyPad->Buttons[i].h = h;
   KeyPad->Buttons[i].number = i+1;
   KeyPad->Buttons[i].color = color;
+  KeyPad->Buttons[i].text = (char *)text;
 }
 
-void initKeyPad(struct KeyPad* KeyPad, int offset, int w, int h, int color)
+void initKeyPad(struct KeyPad* KeyPad, int x_offset, int y_offset, int w, int h, int color)
 {
-  int x = 0;
-  int y = 0;
+  int x = x_offset;
+  int y = y_offset;
   int xw;
   int yh;
-  xw = (w - offset*2 )/ 3; 
-  yh = (h - offset*2 )/ 3; 
+  xw = (w - x_offset*4 )/ 3; 
+  yh = (h - y_offset*2 ); 
   KeyPad->w = w;
   KeyPad->h = h;
-  KeyPad->offset = offset;
-
-  for(int i = 0; i < 3; i++)
-  {
-    addButton(KeyPad, i, x, y, xw, yh, color);
-    x = x+xw+KeyPad->offset;
-  }
-  x = 0;
-  y = y+yh+KeyPad->offset;
-  for(int i = 3; i < 6; i++)
-  {
-    addButton(KeyPad, i, x, y, xw, yh, color);
-    x = x+xw+KeyPad->offset;
-  }
-  x = 0;  
-  y = y+yh+KeyPad->offset;
-  for(int i = 6; i < 9; i++)
-  {
-    addButton(KeyPad, i, x, y, xw, yh, color);
-    x = x+xw+KeyPad->offset;
-  }
+  KeyPad->x_offset = x_offset;
+  KeyPad->y_offset = y_offset;
+  int i = 0;
+  addButton(KeyPad, i++, x, y, xw, yh, color, "rock");
+  x = x+xw+KeyPad->x_offset;
+  addButton(KeyPad, i++, x, y, xw, yh, color, "paper");
+  x = x+xw+KeyPad->x_offset;
+  addButton(KeyPad, i, x, y, xw, yh, color, "scissors");
 }
 
 void lv_button(Button *kp_button, lv_obj_t *button, int x, int y, int w, int h, const char * label_txt)
@@ -128,8 +110,6 @@ void lv_button(Button *kp_button, lv_obj_t *button, int x, int y, int w, int h, 
 
     lv_style_set_bg_opa(&style, LV_OPA_100);
     lv_style_set_bg_color(&style, lv_palette_main(LV_PALETTE_BLUE));
-    lv_style_set_bg_grad_color(&style, lv_palette_darken(LV_PALETTE_BLUE, 2));
-    lv_style_set_bg_grad_dir(&style, LV_GRAD_DIR_VER);
 
     lv_style_set_border_opa(&style, LV_OPA_40);
     lv_style_set_border_width(&style, 2);
@@ -149,14 +129,9 @@ void lv_button(Button *kp_button, lv_obj_t *button, int x, int y, int w, int h, 
     static lv_style_t style_pr;
     lv_style_init(&style_pr);
 
-    /*Add a large outline when pressed*/
-    lv_style_set_outline_width(&style_pr, 30);
-    lv_style_set_outline_opa(&style_pr, LV_OPA_TRANSP);
-
     lv_style_set_translate_y(&style_pr, 5);
     lv_style_set_shadow_offset_y(&style_pr, 3);
     lv_style_set_bg_color(&style_pr, lv_palette_darken(LV_PALETTE_BLUE, 2));
-    lv_style_set_bg_grad_color(&style_pr, lv_palette_darken(LV_PALETTE_BLUE, 4));
 
     button = lv_button_create(lv_scr_act());
     lv_obj_remove_style_all(button);                          /*Remove the style coming from the theme*/
@@ -189,7 +164,7 @@ void setup()
   smartdisplay_init();
   auto display = lv_display_get_default();
   lv_display_set_rotation(display, LV_DISPLAY_ROTATION_270);
-  initKeyPad(&KeyPad, 5, SCREEN_WIDTH, SCREEN_HEIGHT, TFT_GREEN);
+  initKeyPad(&KeyPad, 5, 40, SCREEN_WIDTH, SCREEN_HEIGHT, TFT_GREEN);
   drawKeyPad(&KeyPad);
   if(USE_WIFI)
   {
