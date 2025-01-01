@@ -29,7 +29,7 @@
 #define WIN 1
 #define LOSE 2
 #define SCISSORS 2
-#define SB_SHOW_DRAWS 0
+#define SB_SHOW_DRAWS 1
 
 typedef void (*event_cb_t)(lv_event_t *event);
 
@@ -116,7 +116,7 @@ void initScoreBoard(struct ScoreBoard* ScoreBoard)
   ScoreBoard->sb_lose = lv_label_create(lv_scr_act());
   if(SB_SHOW_DRAWS)
   {
-    ScoreBoard->sb_lose = lv_label_create(lv_scr_act());
+    ScoreBoard->sb_draw = lv_label_create(lv_scr_act());
   }
 }
 
