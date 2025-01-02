@@ -8,11 +8,7 @@
 #include <WiFi.h>
 #include "WifiPasswd.h"
 
-//Set USE_WIFI to 1 to enable wifi currently only AP mode is setup
-//USE_WIFI_AP needs to be 1 for the AP to be enabled, edit the settings in inc/WifiPasswd.h before enabling
 #define DEBUG 1
-#define USE_WIFI 1 
-#define USE_WIFI_AP 1
 #define SERVER_PORT 80
 
 #define SCREEN_WIDTH 320
