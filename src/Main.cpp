@@ -10,8 +10,10 @@
 
 //Set USE_WIFI to 1 to enable wifi currently only AP mode is setup
 //USE_WIFI_AP needs to be 1 for the AP to be enabled, edit the settings in inc/WifiPasswd.h before enabling
-#define USE_WIFI 0 
+#define DEBUG 1
+#define USE_WIFI 1 
 #define USE_WIFI_AP 1
+#define SERVER_PORT 80
 
 #define SCREEN_WIDTH 320
 #define SCREEN_HEIGHT 240
@@ -23,36 +25,52 @@
 #define LOSE_Y 5
 #define DRAW_X 210
 #define DRAW_Y 5
+#define DEBUG_X 5
+#define DEBUG_Y 215
 #define ROCK 0
 #define PAPER 1
+#define SCISSORS 2
 #define DRAW 0
 #define WIN 1
 #define LOSE 2
-#define SCISSORS 2
 #define SB_SHOW_DRAWS 1
+#define SERVER 0
+#define CLIENT 1
+#define X_OFFSET 5
+#define Y_OFFSET 40
+#define MAX_CLIENTS 1
 
 typedef void (*event_cb_t)(lv_event_t *event);
+
+struct ClientState {
+    WiFiClient client; 
+    bool active;
+    String buffer;
+};
 
 struct ScoreBoard{
   int win;
   int lose;
   int draw;
+  char *debug;
   int win_x;
   int win_y;
   int lose_x;
   int lose_y;
   int draw_x;
   int draw_y;
+  int debug_x;
+  int debug_y;
   lv_obj_t *sb_win; 
   lv_obj_t *sb_lose;
   lv_obj_t *sb_draw;
+  lv_obj_t *sb_debug;
 };
 
 struct Button {
     int x, y;       
     int w, h; 
     int number;
-    int color;
     char *text;
     lv_obj_t *button;
     event_cb_t callback;
@@ -66,15 +84,32 @@ struct KeyPad {
   struct Button Buttons[NUM_BUTTONS];
 };
 
-struct Wifi {
+struct WifiD{
+  int Type;
+  WiFiServer* server; // Pointer to the server
+  WiFiClient* client;
+  bool Enabled;
+};
+
+struct WifiButtons {
     struct Button Buttons[WIFI_BUTTONS];
 };
 
-struct KeyPad KeyPad;
-struct Wifi Wifi;
-struct ScoreBoard ScoreBoard;
+struct Game {
+  int gameNumber;
+  int player_symbol;
+  int opponent_symbol;
+  int state;
+};
 
-void initGame(struct KeyPad *KeyPad, struct ScoreBoard *ScoreBoard);
+struct KeyPad KeyPad;
+struct WifiButtons WifiButtons;
+struct ScoreBoard ScoreBoard;
+struct WifiD WifiD;
+struct Game Game;
+ClientState clients[MAX_CLIENTS];
+
+void initGame();
 void initKeyPad(struct KeyPad* KeyPad, int x_offset, int y_offset, int w, int h, int color);
 void addButton(struct KeyPad* KeyPad, int i, int x, int y, int w, int h, int color, const char *text);
 void lv_button(struct Button * kp_button, lv_obj_t *button, int x, int y, int w, int h, const char * label_txt);
@@ -83,16 +118,23 @@ void drawKeyPad(struct KeyPad* KeyPad);
 static void rps_button_click_cb(lv_event_t *event);
 void sendSymbol(int symbol);
 void initWifi(const char* ssid, const char* password, int channel, int ssid_hidden, int max_connections);
+void initWifiButtons(int x_offset, int y_offset);
 static void wifi_button_click_cb(lv_event_t *event);
 void initScoreBoard(struct ScoreBoard* ScoreBoard);
 void drawScoreBoard(struct ScoreBoard* ScoreBoard);
 void updateScoreBoard(struct ScoreBoard* ScoreBoard, int result);
 void resetScoreBoard(struct ScoreBoard* ScoreBoard);
 int compareSymbol(int player_symbol, int opponent_symbol);
-void game(int player_symbol, int opponent_symbol);
-
-
+void game();
+void initServer();
+void initClient();
+void clearScreen();
+void onClientConnect(const WiFiEvent_t event, const WiFiEventInfo_t info); 
 char* numStr(int number);
+void sendMessage(char *message);
+void readServerResponse();
+void connectToServer();
+
 
 char* numStr(int number) {
     std::string strNumber = std::to_string(number);
@@ -112,11 +154,17 @@ void initScoreBoard(struct ScoreBoard* ScoreBoard)
   ScoreBoard->lose_y = LOSE_Y;
   ScoreBoard->draw_x = DRAW_X;
   ScoreBoard->draw_y = DRAW_Y;
+  ScoreBoard->debug_x = DEBUG_X;
+  ScoreBoard->debug_y = DEBUG_Y;
   ScoreBoard->sb_win = lv_label_create(lv_scr_act());
   ScoreBoard->sb_lose = lv_label_create(lv_scr_act());
   if(SB_SHOW_DRAWS)
   {
     ScoreBoard->sb_draw = lv_label_create(lv_scr_act());
+  }
+  if(DEBUG)
+  {
+    ScoreBoard->sb_debug = lv_label_create(lv_scr_act());
   }
 }
 
@@ -142,6 +190,14 @@ void drawScoreBoard(struct ScoreBoard* ScoreBoard)
     lv_label_set_text(ScoreBoard->sb_draw, (const char *)draw_text.c_str());
     lv_obj_set_x(ScoreBoard->sb_draw, ScoreBoard->draw_x);
     lv_obj_set_y(ScoreBoard->sb_draw, ScoreBoard->draw_y);
+  }
+  if(DEBUG)
+  {
+    std::string debug_text = "debug: ";
+    debug_text += ScoreBoard->debug;
+    lv_label_set_text(ScoreBoard->sb_debug, (const char *)debug_text.c_str());
+    lv_obj_set_x(ScoreBoard->sb_debug, ScoreBoard->debug_x);
+    lv_obj_set_y(ScoreBoard->sb_debug, ScoreBoard->debug_y);
   }
 }
 
@@ -194,21 +250,28 @@ static void wifi_button_click_cb(lv_event_t *event)
 {
   struct Button *Button;
   Button = (struct Button *)lv_event_get_user_data(event);
+  if(Button->number == SERVER)
+  {
+    initServer();
+  }
+  if(Button->number == CLIENT)
+  {
+    initClient();
+  }
 }
 
-void addButton(struct Button *Button, int i, int x, int y, int w, int h, int color, const char *text, event_cb_t callback)
+void addButton(struct Button *Button, int i, int x, int y, int w, int h, const char *text, event_cb_t callback)
 {
   Button->x = x;
   Button->y = y;
   Button->w = w;
   Button->h = h;
   Button->number = i;
-  Button->color = color;
   Button->text = (char *)text;
   Button->callback = callback;
 }
 
-void initKeyPad(struct KeyPad* KeyPad, int x_offset, int y_offset, int w, int h, int color)
+void initKeyPad(struct KeyPad* KeyPad, int x_offset, int y_offset, int w, int h)
 {
   int x = x_offset;
   int y = y_offset;
@@ -220,11 +283,11 @@ void initKeyPad(struct KeyPad* KeyPad, int x_offset, int y_offset, int w, int h,
   KeyPad->h = h;
   KeyPad->x_offset = x_offset;
   KeyPad->y_offset = y_offset;
-  addButton(&(KeyPad->Buttons[ROCK]), ROCK, x, y, xw, yh, color, "rock", rps_button_click_cb);
+  addButton(&(KeyPad->Buttons[ROCK]), ROCK, x, y, xw, yh, "rock", rps_button_click_cb);
   x = x+xw+KeyPad->x_offset;
-  addButton(&(KeyPad->Buttons[PAPER]), PAPER, x, y, xw, yh, color, "paper", rps_button_click_cb);
+  addButton(&(KeyPad->Buttons[PAPER]), PAPER, x, y, xw, yh, "paper", rps_button_click_cb);
   x = x+xw+KeyPad->x_offset;
-  addButton(&(KeyPad->Buttons[SCISSORS]), SCISSORS, x, y, xw, yh, color, "scissors", rps_button_click_cb);
+  addButton(&(KeyPad->Buttons[SCISSORS]), SCISSORS, x, y, xw, yh, "scissors", rps_button_click_cb);
 }
 
 void lv_button(Button *kp_button, lv_obj_t *button, int x, int y, int w, int h, const char * label_txt)
@@ -276,26 +339,98 @@ void lv_button(Button *kp_button, lv_obj_t *button, int x, int y, int w, int h, 
     lv_obj_add_event_cb(button, kp_button->callback, LV_EVENT_CLICKED, kp_button);
 }
 
-void initWifi(const char* ssid, const char* password, int channel, int ssid_hidden, int max_connections)
+void initWifiButtons(int x_offset, int y_offset)
 {
-  if(USE_WIFI_AP)
+  int x = x_offset;
+  int y = y_offset;
+  int w = SCREEN_WIDTH;
+  int h = SCREEN_HEIGHT;
+  int xw;
+  int yh;
+  xw = (w - x_offset*3 )/ 2; 
+  yh = (h - y_offset*2 ); 
+  addButton(&(WifiButtons.Buttons[SERVER]), SERVER, x, y, xw, yh, "Server", wifi_button_click_cb);
+  x = x+xw+x_offset;
+  addButton(&(WifiButtons.Buttons[CLIENT]), CLIENT, x, y, xw, yh, "Client", wifi_button_click_cb);
+  drawButton(&(WifiButtons.Buttons[SERVER]), WifiButtons.Buttons[SERVER].x, WifiButtons.Buttons[SERVER].y, WifiButtons.Buttons[SERVER].w, WifiButtons.Buttons[SERVER].h);
+  drawButton(&(WifiButtons.Buttons[CLIENT]), WifiButtons.Buttons[CLIENT].x, WifiButtons.Buttons[CLIENT].y, WifiButtons.Buttons[CLIENT].w, WifiButtons.Buttons[CLIENT].h);
+}
+
+void initServer()
+{
+  WifiD.Type = SERVER;
+  WiFi.mode(WIFI_AP);
+  WiFi.softAP(ssid, password, channel, ssid_hidden, max_connection);
+  WiFi.onEvent(onClientConnect, ARDUINO_EVENT_WIFI_AP_STAIPASSIGNED);
+  WifiD.server = new WiFiServer(SERVER_PORT);
+  WifiD.server->begin();
+}
+
+void onClientConnect(const WiFiEvent_t event, const WiFiEventInfo_t info) 
+{
+  clearScreen();
+  initGame();
+  WifiD.Enabled = 1;
+}
+
+void initClient()
+{
+    WifiD.Type = CLIENT;
+    WiFi.begin(ssid, password);
+    while (WiFi.status() != WL_CONNECTED) {
+        delay(10);
+    }
+    connectToServer();
+}
+char* symbolStr(int symbol)
+{
+  char *message;
+  if(symbol == ROCK)
   {
-    WiFi.mode(WIFI_AP);
-    WiFi.softAP(ssid, password, channel, ssid_hidden, max_connections);
+    message = (char *)"ROCK";
   }
+  if(symbol == PAPER)
+  {
+    message = (char *)"PAPER";
+  }
+  if(symbol == SCISSORS)
+  {
+    message = (char *)"SCISSORS";
+  }
+  return message;
 }
 
 void sendSymbol(int symbol)
 {
-  ScoreBoard.win = symbol;
-  drawScoreBoard(&ScoreBoard);
+  Game.player_symbol = symbol;
+  char *message = symbolStr(symbol);
+  if(DEBUG)
+  {
+    if(WifiD.Type == SERVER)
+    {
+      ScoreBoard.debug = message;
+      drawScoreBoard(&ScoreBoard);
+    }
+  }
+  if(WifiD.Type == CLIENT)
+  {
+    sendMessage(message);
+    //readServerResponse();
+  }
 }
 
-void game(int player_symbol, int opponent_symbol)
+void clearScreen()
 {
-  int result = compareSymbol(player_symbol, opponent_symbol);
+  lv_obj_t *current_screen = lv_scr_act(); // Get the current active screen
+  lv_obj_clean(current_screen);           // Remove all objects on the screen
+}
+
+void game()
+{
+  int result = compareSymbol(Game.player_symbol, Game.opponent_symbol);
   updateScoreBoard(&ScoreBoard, result);
 }
+
 int compareSymbol(int player_symbol, int opponent_symbol)
 {
   if(player_symbol == ROCK)
@@ -346,34 +481,148 @@ int compareSymbol(int player_symbol, int opponent_symbol)
   return -1;
 }
 
-void initGame(struct KeyPad *KeyPad, struct ScoreBoard *ScoreBoard)
+void initGame()
 {
-    drawKeyPad(KeyPad);
-    drawScoreBoard(ScoreBoard);
+    Game.gameNumber++;
+    initKeyPad(&KeyPad, X_OFFSET, Y_OFFSET, SCREEN_WIDTH, SCREEN_HEIGHT);
+    initScoreBoard(&ScoreBoard);
+    drawKeyPad(&KeyPad);
+    drawScoreBoard(&ScoreBoard);
 }
 
 void setup()
 {
+  WifiD.Enabled = 0;
+  ScoreBoard.debug = (char *)"Debug";
   smartdisplay_init();
   auto display = lv_display_get_default();
   lv_display_set_rotation(display, LV_DISPLAY_ROTATION_270);
-  initScoreBoard(&ScoreBoard);
-  initKeyPad(&KeyPad, 5, 40, SCREEN_WIDTH, SCREEN_HEIGHT, TFT_GREEN);
-  if(USE_WIFI)
-  {
-    initWifi(ssid, password, 11, 0, 4);
-  }
-  initGame(&KeyPad, &ScoreBoard);
+  initWifiButtons(X_OFFSET, Y_OFFSET);
+  Game.gameNumber = 0;
+  Game.player_symbol = -1;
+  Game.opponent_symbol = -1;
 }
+
+void acceptNewClients() {
+    WiFiClient newClient = WifiD.server->available();
+    if (newClient) {
+        for (int i = 0; i < MAX_CLIENTS; i++) {
+            if (!clients[i].active) {
+                clients[i].client = newClient;
+                clients[i].active = true;
+                clients[i].buffer = "";
+                return;
+            }
+        }
+        newClient.stop();
+    }
+}
+
+void handleClients() {
+    for (int i = 0; i < MAX_CLIENTS; i++) {
+        if (clients[i].active) {
+            WiFiClient& client = clients[i].client;
+
+            if (!client.connected()) {
+                clients[i].active = false;
+                client.stop();
+                continue;
+            }
+
+            // Read incoming data
+            while (client.available()) {
+                char c = client.read();
+                clients[i].buffer += c;
+
+                // Process complete requests (e.g., ends with newline)
+                if (c == '\n') {
+                    clients[i].buffer.trim();
+                    if(clients[i].buffer == "ROCK")
+                    {
+                      Game.opponent_symbol = ROCK;
+                    }
+                    if(clients[i].buffer == "PAPER")
+                    {
+                      Game.opponent_symbol = PAPER;
+                    }
+                    if(clients[i].buffer == "SCISSORS")
+                    {
+                      Game.opponent_symbol = SCISSORS;
+                    }
+                    char *message = symbolStr(Game.player_symbol);
+                    client.println(message);
+                    game();
+                    // Clear the buffer for the next request
+                    clients[i].buffer = "";
+                }
+            }
+        }
+    }
+}
+
+void connectToServer() {
+    WifiD.client = new WiFiClient();
+    if (!WifiD.client->connected()) {
+        if (WifiD.client->connect(WiFi.gatewayIP(), SERVER_PORT)) {
+          clearScreen();
+          initGame();
+          WifiD.Enabled = 1;
+        }
+    }
+}
+
+void sendMessage(char *message) {
+    if (WifiD.client->connected()) {
+        WifiD.client->println(message);
+    }
+}
+
+void readServerResponse() {
+  if (WifiD.client->connected() && WifiD.client->available()) {
+      String response = WifiD.client->readStringUntil('\n');
+      response.trim();
+      if(response == "ROCK")
+      {
+        Game.opponent_symbol = ROCK;
+      }
+      if(response == "PAPER")
+      {
+        Game.opponent_symbol = PAPER;
+      }
+      if(response == "SCISSORS")
+      {
+        Game.opponent_symbol = SCISSORS;
+      }
+      if(DEBUG)
+      {
+        ScoreBoard.debug = symbolStr(Game.opponent_symbol);
+        drawScoreBoard(&ScoreBoard);
+      }
+      game();
+  }
+}
+
 
 auto lv_last_tick = millis();
 
 void loop()
 {
-    auto const now = millis();
-    // Update the ticker
-    lv_tick_inc(now - lv_last_tick);
-    lv_last_tick = now;
-    // Update the UI
-    lv_timer_handler();
+  auto const now = millis();
+  // Update the ticker
+  lv_tick_inc(now - lv_last_tick);
+  lv_last_tick = now;
+  // Update the UI
+  lv_timer_handler();
+  if(WifiD.Enabled)
+  {
+    if(WifiD.Type == SERVER)
+    {
+      acceptNewClients();
+      handleClients();
+    }
+    if(WifiD.Type == CLIENT)
+    {
+      readServerResponse();
+    }
+  }
 }
