@@ -163,8 +163,14 @@ void initCpuOpponent()
 void sendCpuMessage(int symbol)
 {
   WifiD *wifiD = getWifiD();
+  ScoreBoard *scoreBoard = getScoreBoard();
   int ro_sham_bo = rand() % 3;
   wifiD->opponent_symbol = ro_sham_bo;
+  if(DEBUG)
+  {
+    symbolStr(wifiD->opponent_symbol);
+    drawScoreBoard(scoreBoard);
+  }
   wifiD->run();
 }
 
