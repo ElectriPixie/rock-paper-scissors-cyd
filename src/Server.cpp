@@ -130,7 +130,7 @@ void initServer()
   WifiD *wifiD = getWifiD();
   wifiD->Type = SERVER;
   WiFi.mode(WIFI_AP);
-  WiFi.softAP(ssid, password, channel, ssid_hidden, max_connection);
+  WiFi.softAP(SSID, PASSWORD, CHANNEL, SSID_HIDDEN, MAX_CONNECTION);
   WiFi.onEvent(onClientConnect, ARDUINO_EVENT_WIFI_AP_STAIPASSIGNED);
   wifiD->server = new WiFiServer(SERVER_PORT);
   wifiD->server->begin();
@@ -141,7 +141,7 @@ void initClient()
     WifiD *wifiD = getWifiD();
     //game->Type = CLIENT;
     wifiD->Type = CLIENT;
-    WiFi.begin(ssid, password);
+    WiFi.begin(SSID, PASSWORD);
     while (WiFi.status() != WL_CONNECTED) {
         delay(10);
     }

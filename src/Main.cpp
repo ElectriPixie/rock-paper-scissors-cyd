@@ -1,13 +1,8 @@
 #include <Arduino.h>
 #include <TFT_eSPI.h>
 #include <esp32_smartdisplay.h>
-
-
 #include "Define.h"
 #include "Game.h"
-#include "ScoreBoard.h"
-#include "KeyPad.h"
-#include "Server.h"
 
 ScoreBoard *scoreBoard = getScoreBoard();
 KeyPad *keyPad = getKeyPad();

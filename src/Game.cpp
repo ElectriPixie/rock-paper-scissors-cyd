@@ -1,6 +1,4 @@
 #include "Game.h"
-ScoreBoard *scoreBoard = getScoreBoard();
-KeyPad *keyPad = getKeyPad();
 Game _game;
 
 Game* getGame() 
@@ -18,6 +16,7 @@ void addKeyPadCB(KeyPad *keyPad)
 
 void runGame(Game *game)
 {
+  ScoreBoard *scoreBoard = getScoreBoard();
   int result = compareSymbol(game->player_symbol, game->opponent_symbol);
   updateScoreBoard(scoreBoard, result);
 }
@@ -74,11 +73,13 @@ int compareSymbol(int player_symbol, int opponent_symbol)
 
 void initGame(Game *game)
 {
-    game->gameNumber++;
-    initKeyPad(keyPad, X_OFFSET, Y_OFFSET, SCREEN_WIDTH, SCREEN_HEIGHT);
-    initScoreBoard(scoreBoard);
-    drawKeyPad(keyPad);
-    drawScoreBoard(scoreBoard);
+  KeyPad *keyPad = getKeyPad();
+  ScoreBoard *scoreBoard = getScoreBoard();
+  game->gameNumber++;
+  initKeyPad(keyPad, X_OFFSET, Y_OFFSET, SCREEN_WIDTH, SCREEN_HEIGHT);
+  initScoreBoard(scoreBoard);
+  drawKeyPad(keyPad);
+  drawScoreBoard(scoreBoard);
 }
 
 void rps_button_click_cb(lv_event_t *event)
@@ -106,6 +107,7 @@ void wifi_button_click_cb(lv_event_t *event)
 void sendSymbol(int symbol)
 {
   Game *game = getGame();
+  ScoreBoard *scoreBoard = getScoreBoard();
   game->player_symbol = symbol;
   char *message = symbolStr(symbol);
   if(DEBUG)
