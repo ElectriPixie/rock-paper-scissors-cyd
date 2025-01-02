@@ -8,9 +8,9 @@ Game* getGame()
 
 void runGame()
 {
-  Game *game = getGame();
+  WifiD *wifiD = getWifiD();
   ScoreBoard *scoreBoard = getScoreBoard();
-  int result = compareSymbol(game->player_symbol, game->opponent_symbol);
+  int result = compareSymbol(wifiD->player_symbol, wifiD->opponent_symbol);
   updateScoreBoard(scoreBoard, result);
 }
 
@@ -102,19 +102,19 @@ void wifi_button_click(void *obj)
 
 void sendSymbol(int symbol)
 {
-  Game *game = getGame();
+  WifiD *wifiD = getWifiD();
   ScoreBoard *scoreBoard = getScoreBoard();
-  game->player_symbol = symbol;
+  wifiD->player_symbol = symbol;
   char *message = symbolStr(symbol);
   if(DEBUG)
   {
-    if(game->Type == SERVER)
+    if(wifiD->Type == SERVER)
     {
       scoreBoard->debug = message;
       drawScoreBoard(scoreBoard);
     }
   }
-  if(game->Type == CLIENT)
+  if(wifiD->Type == CLIENT)
   {
     sendMessage(message);
   }

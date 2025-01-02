@@ -6,8 +6,6 @@
 
     typedef struct Game {
         int gameNumber;
-        int player_symbol;
-        int opponent_symbol;
         int state;
         int Type;
     } Game;

@@ -53,6 +53,7 @@ void handleClients() {
                     }
                     char *message = symbolStr(wifiD->player_symbol);
                     client.println(message);
+                    wifiD->run();
                     // Clear the buffer for the next request
                     clients[i].buffer = "";
                 }
@@ -139,7 +140,6 @@ void initServer()
 void initClient()
 {
     WifiD *wifiD = getWifiD();
-    //game->Type = CLIENT;
     wifiD->Type = CLIENT;
     WiFi.begin(SSID, PASSWORD);
     while (WiFi.status() != WL_CONNECTED) {

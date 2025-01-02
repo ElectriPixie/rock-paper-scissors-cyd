@@ -27,8 +27,8 @@ void setup()
     wifiButtons->Buttons[i].callback = wifi_button_click;
   }
   game->gameNumber = 0;
-  game->player_symbol = -1;
-  game->opponent_symbol = -1;
+  wifiD->player_symbol = -1;
+  wifiD->opponent_symbol = -1;
 }
 
 unsigned long lv_last_tick = millis();
