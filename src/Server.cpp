@@ -67,7 +67,7 @@ void connectToServer() {
     if (!wifiD->client->connected()) {
         if (wifiD->client->connect(WiFi.gatewayIP(), SERVER_PORT)) {
           clearScreen();
-          //initGame(game);
+          wifiD->init();
           wifiD->Enabled = 1;
         }
     }
@@ -96,7 +96,7 @@ void readServerResponse() {
         scoreBoard->debug = symbolStr(wifiD->opponent_symbol);
         drawScoreBoard(scoreBoard);
       }
-      //runGame(game);
+      wifiD->run();
   }
 }
 
@@ -121,7 +121,7 @@ void onClientConnect(const WiFiEvent_t event, const WiFiEventInfo_t info)
 {
   clearScreen();
   WifiD *wifiD = getWifiD();
-  //initGame(game);
+  wifiD->init();
   wifiD->Enabled = 1;
 }
 

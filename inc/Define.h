@@ -20,8 +20,8 @@
     #define DRAW 0
     #define WIN 1
     #define LOSE 2
-    #define SERVER 1
-    #define CLIENT 2
+    #define SERVER 0
+    #define CLIENT 1
     #define CPU_OPPONENT 2
     #define X_OFFSET 5
     #define Y_OFFSET 40

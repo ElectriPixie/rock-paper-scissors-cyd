@@ -1,7 +1,7 @@
 #include "Buttons.h"
 void drawButton(struct Button *button, int x, int y, int w, int h)
 {
-  addLvButton(button->lv_button, x, y, w, h, button->text);
+  addLvButton(button, button->lv_button, x, y, w, h, button->text);
 }
 
 void addButton(struct Button *button, int i, int x, int y, int w, int h, const char *text)
@@ -15,7 +15,14 @@ void addButton(struct Button *button, int i, int x, int y, int w, int h, const c
   //button->callback = callback;
 }
 
-void addLvButton(lv_obj_t *lv_button, int x, int y, int w, int h, const char * label_txt)
+void button_click_cb(lv_event_t *event)
+{
+  struct Button *button;
+  button = (struct Button *)lv_event_get_user_data(event);
+  button->callback((void *)button);
+}
+
+void addLvButton(Button *button, lv_obj_t *lv_button, int x, int y, int w, int h, const char * label_txt)
 {
     /*Init the style for the default state*/
     static lv_style_t style;
@@ -57,6 +64,7 @@ void addLvButton(lv_obj_t *lv_button, int x, int y, int w, int h, const char * l
     lv_obj_t * label = lv_label_create(lv_button);
     lv_label_set_text(label, label_txt);
     lv_obj_center(label);
+    lv_obj_add_event_cb(lv_button, button_click_cb, LV_EVENT_CLICKED, button);
     lv_obj_set_x(lv_button, x);
     lv_obj_set_y(lv_button, y);
     lv_obj_set_width(lv_button, w);

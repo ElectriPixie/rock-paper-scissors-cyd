@@ -20,4 +20,5 @@
     void initKeyPad(KeyPad *keyPad, int x_offset, int y_offset, int w, int h);
     void drawKeyPad(KeyPad *keyPad);
     void initWifiButtons(int x_offset, int y_offset);
+    void drawWifiButtons(WifiButtons *wifiButtons);
 #endif /* KEYPAD_H */

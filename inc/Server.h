@@ -6,6 +6,8 @@
   #include "Util.h"
   #include "ScoreBoard.h"
 
+  typedef void (*GameFunction)();
+
   typedef struct WifiD{
     int Type;
     int player_symbol;
@@ -13,6 +15,8 @@
     WiFiServer* server;
     WiFiClient* client;
     bool Enabled;
+    GameFunction init;
+    GameFunction run;
   } WifiD;
 
   typedef struct ClientState {

@@ -6,16 +6,9 @@ Game* getGame()
     return &_game;
 }
 
-void addKeyPadCB(KeyPad *keyPad) 
+void runGame()
 {
-  for(int i = 0; i < NUM_BUTTONS; i++)
-  {
-    lv_obj_add_event_cb(keyPad->Buttons[i].lv_button, keyPad->Buttons[i].callback, LV_EVENT_CLICKED, &keyPad->Buttons[i]);
-  }
-}
-
-void runGame(Game *game)
-{
+  Game *game = getGame();
   ScoreBoard *scoreBoard = getScoreBoard();
   int result = compareSymbol(game->player_symbol, game->opponent_symbol);
   updateScoreBoard(scoreBoard, result);
@@ -71,8 +64,9 @@ int compareSymbol(int player_symbol, int opponent_symbol)
   return -1;
 }
 
-void initGame(Game *game)
+void initGame()
 {
+  Game *game = getGame();
   KeyPad *keyPad = getKeyPad();
   ScoreBoard *scoreBoard = getScoreBoard();
   game->gameNumber++;
@@ -82,26 +76,24 @@ void initGame(Game *game)
   drawScoreBoard(scoreBoard);
 }
 
-void rps_button_click_cb(lv_event_t *event)
+void rps_button_click(void *obj)
 {
-  struct Button *button;
-  button = (struct Button *)lv_event_get_user_data(event);
+  Button *button = (Button *)obj;
   sendSymbol(button->number);
 }
 
-void wifi_button_click_cb(lv_event_t *event)
+void wifi_button_click(void *obj)
 {
-  struct Button *Button;
-  Button = (struct Button *)lv_event_get_user_data(event);
-  if(Button->number == SERVER)
+  Button *button = (Button *)obj;
+  if(button->number == SERVER)
   {
     initServer();
   }
-  if(Button->number == CLIENT)
+  if(button->number == CLIENT)
   {
     initClient();
   }
-  //if(Button->number == CPU_OPPONENT)
+  //if(button->number == CPU_OPPONENT)
 }
 
 void sendSymbol(int symbol)
@@ -121,6 +113,5 @@ void sendSymbol(int symbol)
   if(game->Type == CLIENT)
   {
     sendMessage(message);
-    //readServerResponse();
   }
 }

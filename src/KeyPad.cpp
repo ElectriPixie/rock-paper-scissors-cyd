@@ -51,6 +51,10 @@ void initWifiButtons(int x_offset, int y_offset)
   addButton(&(wifiButtons->Buttons[SERVER]), SERVER, x, y, xw, yh, "Server");
   x = x+xw+x_offset;
   addButton(&(wifiButtons->Buttons[CLIENT]), CLIENT, x, y, xw, yh, "Client");
+}
+
+void drawWifiButtons(WifiButtons *wifiButtons)
+{
   drawButton(&(wifiButtons->Buttons[SERVER]), wifiButtons->Buttons[SERVER].x, wifiButtons->Buttons[SERVER].y, wifiButtons->Buttons[SERVER].w, wifiButtons->Buttons[SERVER].h);
   drawButton(&(wifiButtons->Buttons[CLIENT]), wifiButtons->Buttons[CLIENT].x, wifiButtons->Buttons[CLIENT].y, wifiButtons->Buttons[CLIENT].w, wifiButtons->Buttons[CLIENT].h);
 }

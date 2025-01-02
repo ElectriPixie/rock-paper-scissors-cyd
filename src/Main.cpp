@@ -14,26 +14,37 @@ ClientState *clients = getClients();
 void setup()
 {
   wifiD->Enabled = 0;
+  wifiD->init = initGame;
+  wifiD->run = runGame;
   scoreBoard->debug = (char *)"Debug";
   smartdisplay_init();
   auto display = lv_display_get_default();
   lv_display_set_rotation(display, LV_DISPLAY_ROTATION_270);
   initWifiButtons(X_OFFSET, Y_OFFSET);
+  drawWifiButtons(wifiButtons);
+  for(int i = 0; i < WIFI_BUTTONS; i++)
+  {
+    wifiButtons->Buttons[i].callback = wifi_button_click;
+  }
   game->gameNumber = 0;
   game->player_symbol = -1;
   game->opponent_symbol = -1;
 }
 
-auto lv_last_tick = millis();
+unsigned long lv_last_tick = millis();
 
 void loop()
 {
   auto const now = millis();
-  // Update the ticker
-  lv_tick_inc(now - lv_last_tick);
+  if (now > lv_last_tick) {
+      lv_tick_inc(now - lv_last_tick);
+  } else {
+      lv_tick_inc(1); // Handle timer wraparound or other anomalies
+  }
   lv_last_tick = now;
   // Update the UI
   lv_timer_handler();
+  delay(5);
   if(wifiD->Enabled)
   {
     if(wifiD->Type == SERVER)
