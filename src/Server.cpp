@@ -155,6 +155,7 @@ void initClient()
 void initCpuOpponent()
 {
   WifiD *wifiD = getWifiD();
+  wifiD->Type = CPU_OPPONENT;
   srand(time(0));
   wifiD->init();
 }
