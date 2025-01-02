@@ -168,7 +168,7 @@ void sendCpuMessage(int symbol)
   wifiD->opponent_symbol = ro_sham_bo;
   if(DEBUG)
   {
-    symbolStr(wifiD->opponent_symbol);
+    scoreBoard->debug = symbolStr(wifiD->opponent_symbol);
     drawScoreBoard(scoreBoard);
   }
   wifiD->run();
