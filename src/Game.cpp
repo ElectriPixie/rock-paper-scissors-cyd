@@ -71,6 +71,10 @@ void initGame()
   ScoreBoard *scoreBoard = getScoreBoard();
   game->gameNumber++;
   initKeyPad(keyPad, X_OFFSET, Y_OFFSET, SCREEN_WIDTH, SCREEN_HEIGHT);
+  for(int i=0; i<NUM_BUTTONS; i++)
+  {
+    keyPad->Buttons[i].callback = rps_button_click;
+  }
   initScoreBoard(scoreBoard);
   drawKeyPad(keyPad);
   drawScoreBoard(scoreBoard);
