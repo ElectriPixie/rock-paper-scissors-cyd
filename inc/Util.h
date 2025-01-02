@@ -7,4 +7,5 @@
     #include <widgets/label/lv_label.h>
     #include <widgets/button/lv_button.h>
     char* numStr(int number);
+    void clearScreen();
 #endif /* UTIL_H */

@@ -2,9 +2,14 @@
   #define SERVER_H
   #include <WiFi.h>
   #include "Define.h"
+  #include "WifiPasswd.h"
+  #include "Util.h"
+  #include "ScoreBoard.h"
 
   typedef struct WifiD{
     int Type;
+    int player_symbol;
+    int opponent_symbol;
     WiFiServer* server;
     WiFiClient* client;
     bool Enabled;
@@ -17,7 +22,7 @@
   } ClientState;
 
   WifiD *getWifiD();
-  ClientState *getClientState();
+  ClientState *getClients();
   void acceptNewClients();
   void readServerResponse();
   void connectToServer();
@@ -25,4 +30,7 @@
   void sendMessage(char *message);
   void onClientConnect(const WiFiEvent_t event, const WiFiEventInfo_t info);
   void initServer();
+  void initClient();
+  void sendSymbol(int symbol);
+  char* symbolStr(int symbol);
 #endif /* SERVER_H */

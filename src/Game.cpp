@@ -72,24 +72,6 @@ int compareSymbol(int player_symbol, int opponent_symbol)
   return -1;
 }
 
-char* symbolStr(int symbol)
-{
-  char *message;
-  if(symbol == ROCK)
-  {
-    message = (char *)"ROCK";
-  }
-  if(symbol == PAPER)
-  {
-    message = (char *)"PAPER";
-  }
-  if(symbol == SCISSORS)
-  {
-    message = (char *)"SCISSORS";
-  }
-  return message;
-}
-
 void initGame(Game *game)
 {
     game->gameNumber++;

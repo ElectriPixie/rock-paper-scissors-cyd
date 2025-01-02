@@ -8,16 +8,19 @@ WifiD *getWifiD() {
 struct ClientState _clients[MAX_CLIENTS];
 
 ClientState *getClients() {
-    return &_clients;
+    return _clients;
 }
 
 void sendMessage(char *message) {
+    WifiD *wifiD = getWifiD();
     if (wifiD->client->connected()) {
         wifiD->client->println(message);
     }
 }
 
 void handleClients() {
+    ClientState *clients = getClients();
+    WifiD *wifiD = getWifiD();
     for (int i = 0; i < MAX_CLIENTS; i++) {
         if (clients[i].active) {
             WiFiClient& client = clients[i].client;
@@ -38,19 +41,18 @@ void handleClients() {
                     clients[i].buffer.trim();
                     if(clients[i].buffer == "ROCK")
                     {
-                      game->opponent_symbol = ROCK;
+                      wifiD->opponent_symbol = ROCK;
                     }
                     if(clients[i].buffer == "PAPER")
                     {
-                      game->opponent_symbol = PAPER;
+                      wifiD->opponent_symbol = PAPER;
                     }
                     if(clients[i].buffer == "SCISSORS")
                     {
-                      game->opponent_symbol = SCISSORS;
+                      wifiD->opponent_symbol = SCISSORS;
                     }
-                    char *message = symbolStr(game->player_symbol);
+                    char *message = symbolStr(wifiD->player_symbol);
                     client.println(message);
-                    runGame(game);
                     // Clear the buffer for the next request
                     clients[i].buffer = "";
                 }
@@ -60,42 +62,47 @@ void handleClients() {
 }
 
 void connectToServer() {
+    WifiD *wifiD = getWifiD();
     wifiD->client = new WiFiClient();
     if (!wifiD->client->connected()) {
         if (wifiD->client->connect(WiFi.gatewayIP(), SERVER_PORT)) {
           clearScreen();
-          initGame(game);
+          //initGame(game);
           wifiD->Enabled = 1;
         }
     }
 }
 
 void readServerResponse() {
+  WifiD *wifiD = getWifiD();
+  ScoreBoard *scoreBoard = getScoreBoard();
   if (wifiD->client->connected() && wifiD->client->available()) {
       String response = wifiD->client->readStringUntil('\n');
       response.trim();
       if(response == "ROCK")
       {
-        game->opponent_symbol = ROCK;
+        wifiD->opponent_symbol = ROCK;
       }
       if(response == "PAPER")
       {
-        game->opponent_symbol = PAPER;
+        wifiD->opponent_symbol = PAPER;
       }
       if(response == "SCISSORS")
       {
-        game->opponent_symbol = SCISSORS;
+        wifiD->opponent_symbol = SCISSORS;
       }
       if(DEBUG)
       {
-        scoreBoard->debug = symbolStr(game->opponent_symbol);
+        scoreBoard->debug = symbolStr(wifiD->opponent_symbol);
         drawScoreBoard(scoreBoard);
       }
-      runGame(game);
+      //runGame(game);
   }
 }
 
 void acceptNewClients() {
+    WifiD *wifiD = getWifiD();
+    ClientState *clients = getClients();
     WiFiClient newClient = wifiD->server->available();
     if (newClient) {
         for (int i = 0; i < MAX_CLIENTS; i++) {
@@ -113,13 +120,14 @@ void acceptNewClients() {
 void onClientConnect(const WiFiEvent_t event, const WiFiEventInfo_t info) 
 {
   clearScreen();
-  initGame(game);
+  WifiD *wifiD = getWifiD();
+  //initGame(game);
   wifiD->Enabled = 1;
 }
 
 void initServer()
 {
-  game->Type = SERVER;
+  WifiD *wifiD = getWifiD();
   wifiD->Type = SERVER;
   WiFi.mode(WIFI_AP);
   WiFi.softAP(ssid, password, channel, ssid_hidden, max_connection);
@@ -130,11 +138,30 @@ void initServer()
 
 void initClient()
 {
-    game->Type = CLIENT;
+    WifiD *wifiD = getWifiD();
+    //game->Type = CLIENT;
     wifiD->Type = CLIENT;
     WiFi.begin(ssid, password);
     while (WiFi.status() != WL_CONNECTED) {
         delay(10);
     }
     connectToServer();
+}
+
+char* symbolStr(int symbol)
+{
+  char *message;
+  if(symbol == ROCK)
+  {
+    message = (char *)"ROCK";
+  }
+  if(symbol == PAPER)
+  {
+    message = (char *)"PAPER";
+  }
+  if(symbol == SCISSORS)
+  {
+    message = (char *)"SCISSORS";
+  }
+  return message;
 }

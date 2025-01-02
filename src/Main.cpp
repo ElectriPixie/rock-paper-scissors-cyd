@@ -2,7 +2,7 @@
 #include <TFT_eSPI.h>
 #include <esp32_smartdisplay.h>
 
-#include "WifiPasswd.h"
+
 #include "Define.h"
 #include "Game.h"
 #include "ScoreBoard.h"
@@ -14,7 +14,7 @@ KeyPad *keyPad = getKeyPad();
 Game *game = getGame();
 WifiD *wifiD = getWifiD();
 WifiButtons *wifiButtons = getWifiButtons();
-ClientState *clients[] = getClients();
+ClientState *clients = getClients();
 
 void setup()
 {
