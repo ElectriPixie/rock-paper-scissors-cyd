@@ -1,6 +1,7 @@
 #ifndef SERVER_H
   #define SERVER_H
   #include <WiFi.h>
+  #include <ctime>
   #include "Define.h"
   #include "WifiPasswd.h"
   #include "Util.h"
@@ -37,4 +38,6 @@
   void initClient();
   void sendSymbol(int symbol);
   char* symbolStr(int symbol);
+  void initCpuOpponent();
+  void sendCpuMessage(int symbol);
 #endif /* SERVER_H */

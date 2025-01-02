@@ -135,6 +135,10 @@ void initServer()
   WiFi.onEvent(onClientConnect, ARDUINO_EVENT_WIFI_AP_STAIPASSIGNED);
   wifiD->server = new WiFiServer(SERVER_PORT);
   wifiD->server->begin();
+  clearScreen();
+  lv_obj_t * label = lv_label_create(lv_scr_act());
+  lv_label_set_text(label, "Waiting for client to connect...");
+  lv_obj_center(label);
 }
 
 void initClient()
@@ -146,6 +150,21 @@ void initClient()
         delay(10);
     }
     connectToServer();
+}
+
+void initCpuOpponent()
+{
+  WifiD *wifiD = getWifiD();
+  srand(time(0));
+  wifiD->init();
+}
+
+void sendCpuMessage(int symbol)
+{
+  WifiD *wifiD = getWifiD();
+  int ro_sham_bo = rand() % 3;
+  wifiD->opponent_symbol = ro_sham_bo;
+  wifiD->run();
 }
 
 char* symbolStr(int symbol)

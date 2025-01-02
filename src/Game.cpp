@@ -97,7 +97,10 @@ void wifi_button_click(void *obj)
   {
     initClient();
   }
-  //if(button->number == CPU_OPPONENT)
+  if(button->number == CPU_OPPONENT)
+  {
+    initCpuOpponent();
+  }
 }
 
 void sendSymbol(int symbol)
@@ -117,5 +120,9 @@ void sendSymbol(int symbol)
   if(wifiD->Type == CLIENT)
   {
     sendMessage(message);
+  }
+  if(wifiD->Type == CPU_OPPONENT)
+  {
+    sendCpuMessage(symbol);
   }
 }

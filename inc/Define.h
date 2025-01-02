@@ -5,7 +5,7 @@
     #define SCREEN_WIDTH 320
     #define SCREEN_HEIGHT 240
     #define NUM_BUTTONS 3
-    #define WIFI_BUTTONS 2
+    #define WIFI_BUTTONS 3
     #define WIN_X 5
     #define WIN_Y 5
     #define LOSE_X 105

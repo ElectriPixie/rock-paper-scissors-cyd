@@ -46,11 +46,13 @@ void initWifiButtons(int x_offset, int y_offset)
   int h = SCREEN_HEIGHT;
   int xw;
   int yh;
-  xw = (w - x_offset*3 )/ 2; 
+  xw = (w - x_offset*3 )/ 3; 
   yh = (h - y_offset*2 ); 
   addButton(&(wifiButtons->Buttons[SERVER]), SERVER, x, y, xw, yh, "Server");
   x = x+xw+x_offset;
   addButton(&(wifiButtons->Buttons[CLIENT]), CLIENT, x, y, xw, yh, "Client");
+  x = x+xw+x_offset;
+  addButton(&(wifiButtons->Buttons[CPU_OPPONENT]), CPU_OPPONENT, x, y, xw, yh, "CPU");
 }
 
 void drawWifiButtons(WifiButtons *wifiButtons)
