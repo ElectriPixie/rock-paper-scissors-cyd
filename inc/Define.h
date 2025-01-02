@@ -1,6 +1,6 @@
 #ifndef DEFINE_H
     #define DEFINE_H
-    #define DEBUG 1
+    #define DEBUG 0
     #define SERVER_PORT 80
     #define SCREEN_WIDTH 320
     #define SCREEN_HEIGHT 240
