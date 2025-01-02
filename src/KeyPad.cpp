@@ -59,4 +59,5 @@ void drawWifiButtons(WifiButtons *wifiButtons)
 {
   drawButton(&(wifiButtons->Buttons[SERVER]), wifiButtons->Buttons[SERVER].x, wifiButtons->Buttons[SERVER].y, wifiButtons->Buttons[SERVER].w, wifiButtons->Buttons[SERVER].h);
   drawButton(&(wifiButtons->Buttons[CLIENT]), wifiButtons->Buttons[CLIENT].x, wifiButtons->Buttons[CLIENT].y, wifiButtons->Buttons[CLIENT].w, wifiButtons->Buttons[CLIENT].h);
+  drawButton(&(wifiButtons->Buttons[CPU_OPPONENT]), wifiButtons->Buttons[CPU_OPPONENT].x, wifiButtons->Buttons[CPU_OPPONENT].y, wifiButtons->Buttons[CPU_OPPONENT].w, wifiButtons->Buttons[CPU_OPPONENT].h);
 }
