@@ -1,17 +1,38 @@
 #include "Game.h"
-Game _game;
-
-Game* getGame() 
-{
-    return &_game;
-}
 
 void runGame()
 {
   WifiD *wifiD = getWifiD();
   ScoreBoard *scoreBoard = getScoreBoard();
+  KeyPad *keyPad = getKeyPad();
   int result = compareSymbol(wifiD->player_symbol, wifiD->opponent_symbol);
+  char *result_msg;
+  if(result == WIN)
+  {
+    result_msg = (char *)"WIN";
+  }
+  if(result == LOSE)
+  {
+    result_msg = (char *)"LOOSE";
+  }
+  if(result == DRAW)
+  {
+    result_msg = (char *)"DRAW";
+  }
+  //showResult(result, result_msg);
+  //showKeyPad(keyPad);
   updateScoreBoard(scoreBoard, result);
+  wifiD->picked = 0;
+  wifiD->thrown = 0;
+  wifiD->gameNumber++;
+}
+
+void showResult(int result, const char *result_msg)
+{
+  clearScreen();
+  lv_obj_t * result_label = lv_label_create(lv_scr_act());
+  lv_label_set_text(result_label, result_msg);
+  lv_obj_center(result_label);
 }
 
 int compareSymbol(int player_symbol, int opponent_symbol)
@@ -66,10 +87,10 @@ int compareSymbol(int player_symbol, int opponent_symbol)
 
 void initGame()
 {
-  Game *game = getGame();
+  WifiD *wifiD = getWifiD();
   KeyPad *keyPad = getKeyPad();
   ScoreBoard *scoreBoard = getScoreBoard();
-  game->gameNumber++;
+  wifiD->gameNumber++;
   initKeyPad(keyPad, X_OFFSET, Y_OFFSET, SCREEN_WIDTH, SCREEN_HEIGHT);
   for(int i=0; i<NUM_BUTTONS; i++)
   {
@@ -107,6 +128,7 @@ void sendSymbol(int symbol)
 {
   WifiD *wifiD = getWifiD();
   ScoreBoard *scoreBoard = getScoreBoard();
+  KeyPad *keyPad = getKeyPad();
   wifiD->player_symbol = symbol;
   char *message = symbolStr(symbol);
   if(DEBUG)
@@ -117,9 +139,14 @@ void sendSymbol(int symbol)
       drawScoreBoard(scoreBoard);
     }
   }
+  wifiD->picked = 1;
   if(wifiD->Type == CLIENT)
   {
     sendMessage(message);
+//    hideKeyPad(keyPad);
+//    lv_obj_t * thrown_label = lv_label_create(lv_scr_act());
+//    lv_label_set_text(thrown_label, "Thrown...");
+//    lv_obj_center(thrown_label);
   }
   if(wifiD->Type == CPU_OPPONENT)
   {

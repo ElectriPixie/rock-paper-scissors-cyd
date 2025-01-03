@@ -29,11 +29,27 @@ void initKeyPad(struct KeyPad* keyPad, int x_offset, int y_offset, int w, int h)
   addButton(&(keyPad->Buttons[SCISSORS]), SCISSORS, x, y, xw, yh, "scissors");
 }
 
-void drawKeyPad(struct KeyPad* keyPad)
+void drawKeyPad(KeyPad* keyPad)
 {
   for(int i = 0; i < NUM_BUTTONS; i++)
   {
     drawButton(&(keyPad->Buttons[i]), keyPad->Buttons[i].x, keyPad->Buttons[i].y, keyPad->Buttons[i].w, keyPad->Buttons[i].h);
+  }
+}
+
+void hideKeyPad(KeyPad *keyPad)
+{
+  for(int i = 0; i < NUM_BUTTONS; i++)
+  {
+    hideButton(&(keyPad->Buttons[i]));
+  }
+}
+
+void showKeyPad(KeyPad *keyPad)
+{
+  for(int i = 0; i < NUM_BUTTONS; i++)
+  {
+    showButton(&(keyPad->Buttons[i]));
   }
 }
 

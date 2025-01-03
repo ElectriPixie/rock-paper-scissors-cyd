@@ -2,6 +2,7 @@
     #define BUTTONS_H
     #include "Define.h"
     #include "Util.h"
+    #include "lvgl.h"
 
     typedef void (*ClickFunction)(void *obj);
 
@@ -18,4 +19,7 @@
     void addLvButton(Button *button, lv_obj_t *lv_button, int x, int y, int w, int h, const char * label_txt);
     void drawButton(Button *button, int x, int y, int w, int h);
     void button_click_cb(lv_event_t *event);
+    void hideButton(Button *button);
+    void showButton(Button *button);
+
 #endif /* BUTTONS_H */

@@ -51,15 +51,21 @@ void handleClients() {
                     {
                       wifiD->opponent_symbol = SCISSORS;
                     }
-                    char *message = symbolStr(wifiD->player_symbol);
-                    client.println(message);
-                    wifiD->run();
+                    wifiD->thrown = 1;
                     // Clear the buffer for the next request
                     clients[i].buffer = "";
                 }
             }
         }
     }
+}
+
+void throwDown()
+{
+    WifiD *wifiD = getWifiD();
+    char *message = symbolStr(wifiD->player_symbol);
+    wifiD->gameClient.println(message);
+    wifiD->run();
 }
 
 void connectToServer() {
@@ -109,6 +115,7 @@ void acceptNewClients() {
         for (int i = 0; i < MAX_CLIENTS; i++) {
             if (!clients[i].active) {
                 clients[i].client = newClient;
+                wifiD->gameClient = newClient;
                 clients[i].active = true;
                 clients[i].buffer = "";
                 return;
@@ -129,6 +136,7 @@ void onClientConnect(const WiFiEvent_t event, const WiFiEventInfo_t info)
 void initServer()
 {
   WifiD *wifiD = getWifiD();
+  KeyPad *keyPad = getKeyPad();
   wifiD->Type = SERVER;
   WiFi.mode(WIFI_AP);
   WiFi.softAP(SSID, PASSWORD, CHANNEL, SSID_HIDDEN, MAX_CONNECTION);

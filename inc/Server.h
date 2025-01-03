@@ -6,6 +6,7 @@
   #include "WifiPasswd.h"
   #include "Util.h"
   #include "ScoreBoard.h"
+  #include "KeyPad.h"
 
   typedef void (*GameFunction)();
 
@@ -18,6 +19,10 @@
     bool Enabled;
     GameFunction init;
     GameFunction run;
+    int gameNumber;
+    bool picked;
+    bool thrown;
+    WiFiClient gameClient; 
   } WifiD;
 
   typedef struct ClientState {
@@ -36,8 +41,8 @@
   void onClientConnect(const WiFiEvent_t event, const WiFiEventInfo_t info);
   void initServer();
   void initClient();
-  void sendSymbol(int symbol);
   char* symbolStr(int symbol);
   void initCpuOpponent();
   void sendCpuMessage(int symbol);
+  void throwDown();
 #endif /* SERVER_H */

@@ -6,7 +6,6 @@
 
 ScoreBoard *scoreBoard = getScoreBoard();
 KeyPad *keyPad = getKeyPad();
-Game *game = getGame();
 WifiD *wifiD = getWifiD();
 WifiButtons *wifiButtons = getWifiButtons();
 ClientState *clients = getClients();
@@ -16,6 +15,8 @@ void setup()
   wifiD->Enabled = 0;
   wifiD->init = initGame;
   wifiD->run = runGame;
+  wifiD->picked = 0;
+  wifiD->thrown = 0;
   scoreBoard->debug = (char *)"Debug";
   smartdisplay_init();
   auto display = lv_display_get_default();
@@ -26,7 +27,7 @@ void setup()
   {
     wifiButtons->Buttons[i].callback = wifi_button_click;
   }
-  game->gameNumber = 0;
+  wifiD->gameNumber = 0;
   wifiD->player_symbol = -1;
   wifiD->opponent_symbol = -1;
 }
@@ -51,6 +52,13 @@ void loop()
     {
       acceptNewClients();
       handleClients();
+      if(wifiD->picked)
+      {
+        if(wifiD->thrown)
+        {
+          throwDown();
+        }
+      }
     }
     if(wifiD->Type == CLIENT)
     {
